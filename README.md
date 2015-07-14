@@ -25,8 +25,6 @@ Code operation:
 Limitations of the Code:
 The code is written using python 2.7, and has been tested on OSX (Yosemite) only.
 The current version only supports VASP (Vienna Ab Inito Simulation Package), however I have tried to keep the classes and methods 
-sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wiches to). Presently, the module will assist in the evaluation of  
-ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and 
-the user probably have to "tweak" it to suite their needs.
+sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wishes to). Presently, the module will assist in the evaluation of ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and the user will probably have to "tweak" source to suite their needs.
 
 IMPORTANT :  VASP is not included :)
