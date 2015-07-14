@@ -9,11 +9,8 @@ involve identifying several parameters  like the cut-off energy (to incorporate 
 k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, 
 are extremely tedious, and expensive softwares can happily do them for you.
 
-As a researcher who extensively uses DFT calculations, and a recent python-convert / aficionado / beginner, I took it as an
-opportunity to teach myself python while developing a code to solve a pertinent problem (atleast to me).  
-
 Purpose:
-This python module attempts to automate the process by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. 
+This python module attempts to automate the aforementioned rocess by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. 
 The module provides the user with several tools (in form of classes and methods) to facilitate convergence calculations and analyzes the data.
 
 Code operation:
@@ -345,26 +342,3 @@ class KPOINTSSetup(object):
         shutil.copy('1-runvasploop.sh',path)
         shutil.copy('2-extractData.sh',path)
         print "Completed KPOINT directory structure creation ......"
-            
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-        
-        
