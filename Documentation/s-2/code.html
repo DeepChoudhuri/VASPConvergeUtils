@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Auto Generated Documentation &mdash; VASPConvergeUtils 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="VASPConvergeUtils 1.0.1 documentation" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">VASPConvergeUtils 1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-VASPConvergeUtils">
+<span id="auto-generated-documentation"></span><h1>Auto Generated Documentation<a class="headerlink" href="#module-VASPConvergeUtils" title="Permalink to this headline">¶</a></h1>
+<p>Module name : VASPConvergeUtils.py</p>
+<p>Motivation :
+Density functional theory (DFT) based calculations often requires one (e.g. a dilligent grad student / postdoc) to 
+perform convergence calculations on a supercell, prior to examining a research problem . Such calculations typically 
+involve identifying several parameters  like the cut-off energy (to incorporate all the necessary plane wave basis sets), 
+k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, 
+are extremely tedious, and expensive softwares can happily do them for you.</p>
+<p>As researcher who extensively uses DFT calculations, and a recent python-convert / aficionado / beginner, I took it as an
+opportunity to teach myself python while developing a code to solve a pertinent problem (atleast to me).</p>
+<p>Purpose:
+This python module attempts to automate the process by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. 
+The module provides the user with several tools (in form of classes and methods) to facilitate convergence calculations and analyzes the data.</p>
+<p>Code operation:
+1. Automatically creates a directory structure for convergence calculations, containing all the required files</p>
+<blockquote>
+<div>Basic files REQUIRED to create the strucutre : POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), 1-runvasploop.sh and 2-extractData.sh</div></blockquote>
+<ol class="arabic simple" start="2">
+<li>Use the seprately provided shell script,1-runvasploop.sh, to run the calculations by submitting jobs to your favourite cluster uisng VASP.qsub</li>
+<li>After the calculations are over,a second shell script, 2-extractData.sh (provided separately), will extract the calculated data, and</li>
+<li>The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. This plot can be further used to identify convergence parameters</li>
+</ol>
+<p>Limitations of the Code:
+The code is written using python 2.7, and has been tested on OSX (Yosemite) only.
+The current version only supports VASP (Vienna Ab Inito Simulation Package), however I have tried to keep the classes and methods 
+sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wiches to). Presently, the module will assist in the evaluation of  
+ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and 
+the user probably have to &#8220;tweak&#8221; it to suite their needs.</p>
+<p>IMPORTANT :  VASP is not included :)</p>
+<p>Author: Deep Choudhuri, PhD
+Date: 7th July 2015</p>
+<dl class="class">
+<dt id="VASPConvergeUtils.EcutConvSetup">
+<em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">EcutConvSetup</code><span class="sig-paren">(</span><em>ecutStart=0</em>, <em>ecutStop=10</em>, <em>estep=5</em>, <em>parentFolder='Ecut_Convergence'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class create the directory/folder structure required for cut-off energy calculations
+INPUT : Lower and upper limits of the cut-off energies to be scanned and the scanning step
+OUTPUT : folder name after the each step e.g. lowLimit = 100, upperlImit =120 and step= 2, the folders with names 100, 100 and 120 will be created</p>
+<dl class="method">
+<dt id="VASPConvergeUtils.EcutConvSetup.getINCARFiles">
+<code class="descname">getINCARFiles</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup.getINCARFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup.getINCARFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and copies INCAR files (with differing cut-off energy values ) to previously existing folders</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.EcutConvSetup.locateSubstringPos">
+<code class="descname">locateSubstringPos</code><span class="sig-paren">(</span><em>targetList</em>, <em>subString</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup.locateSubstringPos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup.locateSubstringPos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate a specific sub-strin inside a give string.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.EcutConvSetup.setINCARValue">
+<code class="descname">setINCARValue</code><span class="sig-paren">(</span><em>ecutVal</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup.setINCARValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup.setINCARValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the energy value inside the INCAR file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.EcutConvSetup.setupEcutDirs">
+<code class="descname">setupEcutDirs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup.setupEcutDirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup.setupEcutDirs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Work horse method , that actually creates the directory structure and copies all the relevant files to that structure</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="VASPConvergeUtils.FileLoader">
+<em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">FileLoader</code><span class="sig-paren">(</span><em>fileName</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for loading and extracting data from files like POSCAR, KPOINTS and any file containing the converged data sets
+INPUT = name of the file
+OUTPUTS = file content and/or  plot of the converged data</p>
+<dl class="method">
+<dt id="VASPConvergeUtils.FileLoader.getFileListData">
+<code class="descname">getFileListData</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader.getFileListData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader.getFileListData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the data inside the file as a LIST</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.FileLoader.getFileName">
+<code class="descname">getFileName</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader.getFileName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader.getFileName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Self descriptive</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.FileLoader.getProcessedData">
+<code class="descname">getProcessedData</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader.getProcessedData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader.getProcessedData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data inside the file as a text which can be latter imported in excel, or any other plotting program like this one</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.FileLoader.plotConvData">
+<code class="descname">plotConvData</code><span class="sig-paren">(</span><em>lowYLim=-0.01</em>, <em>highYLim=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader.plotConvData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader.plotConvData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the data present in a file.
+Allows you to set the upper and lower limits in the vertical Y axis</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.FileLoader.setFileName">
+<code class="descname">setFileName</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#FileLoader.setFileName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.FileLoader.setFileName" title="Permalink to this definition">¶</a></dt>
+<dd><p>change the file name if it has changed during the process</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="VASPConvergeUtils.KPOINTSSetup">
+<em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">KPOINTSSetup</code><span class="sig-paren">(</span><em>kStart=0.05</em>, <em>kStop=0.4</em>, <em>kStep=20</em>, <em>kParentFolder='KPoint_Convergence'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#KPOINTSSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.KPOINTSSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class create the directory/folder structure required for k-spacing  calculations
+INPUT : Lower and upper limits of the k-spacings to be scanned and the scanning step
+OUTPUT : folder name after the each step e.g. lowLimit = 0.1, upperlImit = 0.2and step= 2, the folders with names 0.10, and 0.20 will be created</p>
+<dl class="method">
+<dt id="VASPConvergeUtils.KPOINTSSetup.getKMesh">
+<code class="descname">getKMesh</code><span class="sig-paren">(</span><em>kSpacing=0.1</em>, <em>gamma=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#KPOINTSSetup.getKMesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.KPOINTSSetup.getKMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates K mesh depending on the k-spacing value and the selection of gamma centered or Monkhorst-Pack Brillouin zone integration scheme</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.KPOINTSSetup.getLatticeVectors">
+<code class="descname">getLatticeVectors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#KPOINTSSetup.getLatticeVectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.KPOINTSSetup.getLatticeVectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts lattice vectors of the supercell formt he POSCAR file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.KPOINTSSetup.setupKmeshDirs">
+<code class="descname">setupKmeshDirs</code><span class="sig-paren">(</span><em>gamma=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#KPOINTSSetup.setupKmeshDirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.KPOINTSSetup.setupKmeshDirs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Work horse method , that actually creates the directory structure and copies all the relevant files to that structure</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="VASPConvergeUtils.SetupDirectoryStructure">
+<em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">SetupDirectoryStructure</code><span class="sig-paren">(</span><em>lowLimit</em>, <em>highLimit</em>, <em>step</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#SetupDirectoryStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.SetupDirectoryStructure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a directory structure, where the folder names and their quantity (number of folders) is based on the upper and lower limit of the values provided and the scannign step</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="VASPConvergeUtils.VectorMath">
+<em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">VectorMath</code><span class="sig-paren">(</span><em>latticeVec1</em>, <em>latticeVec2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#VectorMath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.VectorMath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does priliminary vector maths
+INPUT : Two vectors
+OUTPUT : Dot or Cross products of the two vectors</p>
+<dl class="method">
+<dt id="VASPConvergeUtils.VectorMath.getCrossProduct">
+<code class="descname">getCrossProduct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#VectorMath.getCrossProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.VectorMath.getCrossProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Self descriptive</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="VASPConvergeUtils.VectorMath.getDotProduct">
+<code class="descname">getDotProduct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#VectorMath.getDotProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.VectorMath.getDotProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Self descriptive, if the seems unfamiliar please refer to any calculus book with vector algebra</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/s-2/code.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Deep Choudhuri.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../_sources/s-2/code.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

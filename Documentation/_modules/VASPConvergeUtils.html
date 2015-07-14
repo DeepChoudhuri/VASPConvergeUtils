@@ -1,0 +1,461 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>VASPConvergeUtils &mdash; VASPConvergeUtils 1.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="VASPConvergeUtils 1.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">VASPConvergeUtils 1.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for VASPConvergeUtils</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module name : VASPConvergeUtils.py</span>
+
+<span class="sd">Motivation :</span>
+<span class="sd">Density functional theory (DFT) based calculations often requires one (e.g. a dilligent grad student / postdoc) to </span>
+<span class="sd">perform convergence calculations on a supercell, prior to examining a research problem . Such calculations typically </span>
+<span class="sd">involve identifying several parameters  like the cut-off energy (to incorporate all the necessary plane wave basis sets), </span>
+<span class="sd">k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, </span>
+<span class="sd">are extremely tedious, and expensive softwares can happily do them for you.</span>
+
+<span class="sd">As researcher who extensively uses DFT calculations, and a recent python-convert / aficionado / beginner, I took it as an</span>
+<span class="sd">opportunity to teach myself python while developing a code to solve a pertinent problem (atleast to me).  </span>
+
+<span class="sd">Purpose:</span>
+<span class="sd">This python module attempts to automate the process by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. </span>
+<span class="sd">The module provides the user with several tools (in form of classes and methods) to facilitate convergence calculations and analyzes the data.</span>
+
+<span class="sd">Code operation:</span>
+<span class="sd">1. Automatically creates a directory structure for convergence calculations, containing all the required files</span>
+<span class="sd">   Basic files REQUIRED to create the strucutre : POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), 1-runvasploop.sh and 2-extractData.sh</span>
+<span class="sd">    </span>
+<span class="sd">2. Use the seprately provided shell script,1-runvasploop.sh, to run the calculations by submitting jobs to your favourite cluster uisng VASP.qsub</span>
+
+<span class="sd">3. After the calculations are over,a second shell script, 2-extractData.sh (provided separately), will extract the calculated data, and</span>
+
+<span class="sd">4. The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. This plot can be further used to identify convergence parameters</span>
+
+<span class="sd">Limitations of the Code:</span>
+<span class="sd">The code is written using python 2.7, and has been tested on OSX (Yosemite) only.</span>
+<span class="sd">The current version only supports VASP (Vienna Ab Inito Simulation Package), however I have tried to keep the classes and methods </span>
+<span class="sd">sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wiches to). Presently, the module will assist in the evaluation of  </span>
+<span class="sd">ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and </span>
+<span class="sd">the user probably have to &quot;tweak&quot; it to suite their needs.</span>
+
+<span class="sd">IMPORTANT :  VASP is not included :)</span>
+
+<span class="sd">Author: Deep Choudhuri, PhD</span>
+<span class="sd">Date: 7th July 2015</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="c"># 1. Class for loading and extracting data from files</span>
+<div class="viewcode-block" id="FileLoader"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader">[docs]</a><span class="k">class</span> <span class="nc">FileLoader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for loading and extracting data from files like POSCAR, KPOINTS and any file containing the converged data sets</span>
+<span class="sd">    INPUT = name of the file</span>
+<span class="sd">    OUTPUTS = file content and/or  plot of the converged data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileName</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fileName</span> <span class="o">=</span> <span class="n">fileName</span>
+        
+<div class="viewcode-block" id="FileLoader.setFileName"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader.setFileName">[docs]</a>    <span class="k">def</span> <span class="nf">setFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        change the file name if it has changed during the process</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fileName</span> <span class="o">=</span> <span class="n">fname</span> <span class="c"># End Method</span>
+        </div>
+<div class="viewcode-block" id="FileLoader.getFileName"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader.getFileName">[docs]</a>    <span class="k">def</span> <span class="nf">getFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Self descriptive</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fileName</span> <span class="c"># End Method</span>
+    </div>
+<div class="viewcode-block" id="FileLoader.getFileListData"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader.getFileListData">[docs]</a>    <span class="k">def</span> <span class="nf">getFileListData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the data inside the file as a LIST</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileName</span><span class="p">)</span>
+        <span class="n">lineData</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fp</span><span class="p">]</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">lineData</span> <span class="c"># End Method</span>
+        </div>
+<div class="viewcode-block" id="FileLoader.getProcessedData"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader.getProcessedData">[docs]</a>    <span class="k">def</span> <span class="nf">getProcessedData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get data inside the file as a text which can be latter imported in excel, or any other plotting program like this one</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileName</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span> <span class="c"># End Method</span>
+        </div>
+<div class="viewcode-block" id="FileLoader.plotConvData"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.FileLoader.plotConvData">[docs]</a>    <span class="k">def</span> <span class="nf">plotConvData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lowYLim</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">highYLim</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the data present in a file.</span>
+<span class="sd">        Allows you to set the upper and lower limits in the vertical Y axis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">FileLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileName</span><span class="p">)</span><span class="o">.</span><span class="n">getProcessedData</span><span class="p">()</span>
+        <span class="k">print</span> <span class="n">data</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ydiff</span> <span class="o">=</span> <span class="n">ndarray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)):</span> <span class="c"># Calcuating Energy differnece</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ydiff</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ydiff</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s">&#39;all&#39;</span><span class="p">)</span>       
+        <span class="n">f</span><span class="p">,</span> <span class="n">axarr</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="s">&#39;-ro&#39;</span><span class="p">)</span>
+        <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;Energy of the cell, eV&#39;</span><span class="p">)</span>
+        <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">ydiff</span><span class="p">,</span><span class="s">&#39;ro&#39;</span><span class="p">)</span>
+        <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;Energy differenece, eV&#39;</span><span class="p">)</span>
+        <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">lowYLim</span><span class="p">,</span><span class="n">highYLim</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Cut off energy, eV&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>    <span class="c"># End Method </span>
+        
+
+
+<span class="c"># 2. Class for setting up a directory tree</span></div></div>
+<div class="viewcode-block" id="SetupDirectoryStructure"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.SetupDirectoryStructure">[docs]</a><span class="k">class</span> <span class="nc">SetupDirectoryStructure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a directory structure, where the folder names and their quantity (number of folders) is based on the upper and lower limit of the values provided and the scannign step</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lowLimit</span><span class="p">,</span> <span class="n">highLimit</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lowLimit</span> <span class="o">=</span> <span class="n">lowLimit</span>    
+        <span class="bp">self</span><span class="o">.</span><span class="n">highLimit</span> <span class="o">=</span> <span class="n">highLimit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span>   
+        
+    <span class="k">def</span> <span class="nf">createDirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filePath</span><span class="p">):</span>
+       <span class="n">dirNum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lowLimit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">highLimit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dirNum</span><span class="p">:</span>
+           <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">filePath</span> <span class="o">+</span> <span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span> <span class="c"># End Method</span>
+           
+ 
+<span class="c"># 3. Class for manipulating lattice vectors</span></div>
+<div class="viewcode-block" id="VectorMath"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.VectorMath">[docs]</a><span class="k">class</span> <span class="nc">VectorMath</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Does priliminary vector maths</span>
+<span class="sd">    INPUT : Two vectors</span>
+<span class="sd">    OUTPUT : Dot or Cross products of the two vectors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latticeVec1</span><span class="p">,</span> <span class="n">latticeVec2</span><span class="p">):</span> <span class="c"># 1D vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">latticeVec1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">latticeVec2</span>
+    
+<div class="viewcode-block" id="VectorMath.getDotProduct"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.VectorMath.getDotProduct">[docs]</a>    <span class="k">def</span> <span class="nf">getDotProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Self descriptive, if the seems unfamiliar please refer to any calculus book with vector algebra</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">A2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span>        
+        <span class="n">dotProd</span> <span class="o">=</span> <span class="n">A1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">A1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">A1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">dotProd</span> <span class="c"># End Method</span>
+    </div>
+<div class="viewcode-block" id="VectorMath.getCrossProduct"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.VectorMath.getCrossProduct">[docs]</a>    <span class="k">def</span> <span class="nf">getCrossProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Self descriptive</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">A2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span>        
+        <span class="n">c1</span> <span class="o">=</span> <span class="n">A1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">A2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">A1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="n">A1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">A2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">c3</span> <span class="o">=</span> <span class="n">A1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">A2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>        
+        <span class="n">crossProd</span> <span class="o">=</span> <span class="p">([</span><span class="n">c1</span><span class="p">,</span> <span class="o">-</span><span class="n">c2</span><span class="p">,</span> <span class="n">c3</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">crossProd</span> <span class="c"># End Method</span>
+    
+       
+<span class="c"># 4. Class for creating a directory structure to perform cut-off energy converngence calculations    </span></div></div>
+<div class="viewcode-block" id="EcutConvSetup"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.EcutConvSetup">[docs]</a><span class="k">class</span> <span class="nc">EcutConvSetup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class create the directory/folder structure required for cut-off energy calculations</span>
+<span class="sd">    INPUT : Lower and upper limits of the cut-off energies to be scanned and the scanning step</span>
+<span class="sd">    OUTPUT : folder name after the each step e.g. lowLimit = 100, upperlImit =120 and step= 2, the folders with names 100, 100 and 120 will be created</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ecutStart</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ecutStop</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">estep</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">parentFolder</span> <span class="o">=</span> <span class="s">&#39;Ecut_Convergence&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ecutStart</span> <span class="o">=</span> <span class="n">ecutStart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ecutStop</span> <span class="o">=</span> <span class="n">ecutStop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estep</span> <span class="o">=</span> <span class="n">estep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parentFolder</span> <span class="o">=</span> <span class="n">parentFolder</span>
+
+        
+<div class="viewcode-block" id="EcutConvSetup.locateSubstringPos"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.EcutConvSetup.locateSubstringPos">[docs]</a>    <span class="k">def</span> <span class="nf">locateSubstringPos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">targetList</span><span class="p">,</span> <span class="n">subString</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Locate a specific sub-strin inside a give string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">targetList</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">subString</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+              <span class="k">return</span> <span class="n">i</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>  <span class="c"># End Method</span>
+               </div>
+<div class="viewcode-block" id="EcutConvSetup.setINCARValue"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.EcutConvSetup.setINCARValue">[docs]</a>    <span class="k">def</span> <span class="nf">setINCARValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ecutVal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the energy value inside the INCAR file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tempList</span> <span class="o">=</span> <span class="n">FileLoader</span><span class="p">(</span><span class="s">&#39;INCAR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getFileListData</span><span class="p">()</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">locateSubstringPos</span><span class="p">(</span><span class="n">tempList</span><span class="p">,</span><span class="s">&#39;ENCUT&#39;</span><span class="p">)</span>
+        <span class="n">tempList</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;ENCUT = &#39;</span><span class="o">+</span> <span class="s">&#39;</span><span class="si">%0.0f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">ecutVal</span>
+        <span class="k">return</span> <span class="n">tempList</span> <span class="c"># End Method</span>
+        
+        </div>
+<div class="viewcode-block" id="EcutConvSetup.getINCARFiles"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.EcutConvSetup.getINCARFiles">[docs]</a>    <span class="k">def</span> <span class="nf">getINCARFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates and copies INCAR files (with differing cut-off energy values ) to previously existing folders</span>
+<span class="sd">       &quot;&quot;&quot;</span>
+       <span class="n">eVals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ecutStart</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ecutStop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estep</span><span class="p">)</span>
+       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">eVals</span><span class="p">:</span>
+           <span class="n">tempINCAR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setINCARValue</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+           <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;INCAR_temp&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+           <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tempINCAR</span><span class="p">:</span>
+               <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">%</span><span class="n">item</span><span class="p">)</span>
+           <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">();</span>
+           <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;INCAR_temp&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="o">+</span><span class="s">&#39;/INCAR&#39;</span><span class="p">)</span> <span class="c"># End Method</span>
+                          
+                    </div>
+<div class="viewcode-block" id="EcutConvSetup.setupEcutDirs"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.EcutConvSetup.setupEcutDirs">[docs]</a>    <span class="k">def</span> <span class="nf">setupEcutDirs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Work horse method , that actually creates the directory structure and copies all the relevant files to that structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentFolder</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentFolder</span><span class="o">+</span><span class="s">&#39;/&#39;</span>
+        <span class="n">SetupDirectoryStructure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ecutStart</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ecutStop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estep</span><span class="p">)</span><span class="o">.</span><span class="n">createDirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getINCARFiles</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>        
+        <span class="n">dirList</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dirList</span><span class="p">:</span>  <span class="c"># Copy rest of the files</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;KPOINTS&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;POSCAR&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;POTCAR&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;VASP.qsub&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+        
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;1-runvasploop.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;2-extractData.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Completed INCAR directory structure creation ......&quot;</span> <span class="c"># End Method           </span>
+            
+ 
+
+<span class="c"># 5. Class for creating a directory structure to perform KPOINT converngence calculations     </span></div></div>
+<div class="viewcode-block" id="KPOINTSSetup"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.KPOINTSSetup">[docs]</a><span class="k">class</span> <span class="nc">KPOINTSSetup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class create the directory/folder structure required for k-spacing  calculations</span>
+<span class="sd">    INPUT : Lower and upper limits of the k-spacings to be scanned and the scanning step</span>
+<span class="sd">    OUTPUT : folder name after the each step e.g. lowLimit = 0.1, upperlImit = 0.2and step= 2, the folders with names 0.10, and 0.20 will be created</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kStart</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="n">kStop</span> <span class="o">=</span> <span class="mf">0.40</span><span class="p">,</span> <span class="n">kStep</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="n">kParentFolder</span> <span class="o">=</span> <span class="s">&#39;KPoint_Convergence&#39;</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot; Usage , 0 = Gamma , 1 = Monkhorst-Pack&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kStart</span> <span class="o">=</span> <span class="n">kStart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kStop</span> <span class="o">=</span> <span class="n">kStop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kStep</span> <span class="o">=</span> <span class="n">kStep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kParentFolder</span> <span class="o">=</span> <span class="n">kParentFolder</span>
+    
+<div class="viewcode-block" id="KPOINTSSetup.getLatticeVectors"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.KPOINTSSetup.getLatticeVectors">[docs]</a>    <span class="k">def</span> <span class="nf">getLatticeVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts lattice vectors of the supercell formt he POSCAR file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tempPOSCAR</span> <span class="o">=</span> <span class="n">FileLoader</span><span class="p">(</span><span class="s">&#39;POSCAR&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getFileListData</span><span class="p">()</span>
+        <span class="n">vecS1</span> <span class="o">=</span> <span class="n">tempPOSCAR</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">vecS2</span> <span class="o">=</span> <span class="n">tempPOSCAR</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">vecS3</span> <span class="o">=</span> <span class="n">tempPOSCAR</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">latticeVectorMatrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">float</span><span class="p">)</span>        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">latticeVectorMatrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vecS1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">latticeVectorMatrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vecS2</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">latticeVectorMatrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">vecS3</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>            
+        <span class="k">return</span> <span class="n">latticeVectorMatrix</span> <span class="c"># End Method</span>
+                            </div>
+<div class="viewcode-block" id="KPOINTSSetup.getKMesh"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.KPOINTSSetup.getKMesh">[docs]</a>    <span class="k">def</span> <span class="nf">getKMesh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kSpacing</span> <span class="o">=</span> <span class="mf">0.10</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates K mesh depending on the k-spacing value and the selection of gamma centered or Monkhorst-Pack Brillouin zone integration scheme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLatticeVectors</span><span class="p">()</span>
+        <span class="n">A1</span> <span class="o">=</span> <span class="n">basis</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span>
+        <span class="n">A2</span> <span class="o">=</span> <span class="n">basis</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>
+        <span class="n">A3</span> <span class="o">=</span> <span class="n">basis</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span>    
+        
+        <span class="n">b1cross</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span><span class="n">A3</span><span class="p">)</span><span class="o">.</span><span class="n">getCrossProduct</span><span class="p">()</span>  
+        <span class="n">b1denom</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span><span class="n">b1cross</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>          
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">b1denom</span><span class="p">,</span><span class="n">b1cross</span><span class="p">)</span>
+        
+        <span class="n">b2cross</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A3</span><span class="p">,</span><span class="n">A1</span><span class="p">)</span><span class="o">.</span><span class="n">getCrossProduct</span><span class="p">()</span>  
+        <span class="n">b2denom</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span><span class="n">b2cross</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>          
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">b2denom</span><span class="p">,</span><span class="n">b2cross</span><span class="p">)</span>
+        
+        <span class="n">b3cross</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span><span class="n">A2</span><span class="p">)</span><span class="o">.</span><span class="n">getCrossProduct</span><span class="p">()</span>  
+        <span class="n">b3denom</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">A3</span><span class="p">,</span><span class="n">b3cross</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>          
+        <span class="n">b3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">b3denom</span><span class="p">,</span><span class="n">b3cross</span><span class="p">)</span>
+        
+        <span class="n">b1mag2</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">b1</span><span class="p">,</span><span class="n">b1</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>
+        <span class="n">b2mag2</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">b2</span><span class="p">,</span><span class="n">b2</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>
+        <span class="n">b3mag2</span> <span class="o">=</span> <span class="n">VectorMath</span><span class="p">(</span><span class="n">b3</span><span class="p">,</span><span class="n">b3</span><span class="p">)</span><span class="o">.</span><span class="n">getDotProduct</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">gamma</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Gamma Centered meshing&quot;</span>
+            <span class="n">M1</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b1mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+            <span class="n">M2</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b2mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+            <span class="n">M3</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b3mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
+        <span class="k">elif</span> <span class="n">gamma</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Monkhorst-Pack meshing&quot;</span>
+            <span class="n">M1</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b1mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span>
+            <span class="n">M2</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b2mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span>
+            <span class="n">M3</span> <span class="o">=</span> <span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b3mag2</span><span class="p">))</span> <span class="o">/</span> <span class="n">kSpacing</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="p">(</span><span class="n">M1</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M1</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M1new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">M1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">M1</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M1</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M1new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">M1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">M2</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M2</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M2new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">M2</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">M2</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M2new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">M2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">M3</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M3</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M3new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">M3</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">M3</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">M3</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+             <span class="n">M3new</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">M3</span><span class="p">)</span>
+        
+        <span class="n">M</span> <span class="o">=</span> <span class="p">([</span><span class="n">M1new</span><span class="p">,</span><span class="n">M2new</span><span class="p">,</span><span class="n">M3new</span><span class="p">])</span>
+        <span class="c">#print M</span>
+        <span class="c">#M = ([M1,M2,M3])</span>
+        <span class="c">#M = ([int(round(M1)),int(round(M2)),int(round(M3))])</span>
+        
+        <span class="k">return</span> <span class="n">M</span> <span class="c"># End method</span>
+    
+    </div>
+<div class="viewcode-block" id="KPOINTSSetup.setupKmeshDirs"><a class="viewcode-back" href="../s-2/code.html#VASPConvergeUtils.KPOINTSSetup.setupKmeshDirs">[docs]</a>    <span class="k">def</span> <span class="nf">setupKmeshDirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Work horse method , that actually creates the directory structure and copies all the relevant files to that structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kParentFolder</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kParentFolder</span><span class="o">+</span><span class="s">&#39;/&#39;</span>
+        <span class="n">SetupDirectoryStructure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kStart</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kStop</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kStep</span><span class="p">)</span><span class="o">.</span><span class="n">createDirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">tempList</span> <span class="o">=</span> <span class="n">FileLoader</span><span class="p">(</span><span class="s">&#39;KPOINTS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getFileListData</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kStart</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kStop</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kStep</span><span class="p">):</span>
+            <span class="n">tempKmesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getKMesh</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">gamma</span><span class="p">)</span>
+            <span class="n">meshString</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tempKmesh</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span> <span class="s">&#39;  &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">tempKmesh</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span> <span class="s">&#39;  &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">tempKmesh</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">print</span> <span class="n">meshString</span>
+            <span class="n">tempList</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshString</span>            
+            <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;KPOINTS_temp&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>            
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tempList</span><span class="p">:</span>
+               <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">%</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">();</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;KPOINTS_temp&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="o">+</span><span class="s">&#39;/KPOINTS&#39;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;INCAR&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;POSCAR&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;POTCAR&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;VASP.qsub&#39;</span><span class="p">,</span><span class="n">path</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%0.2f</span><span class="s">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+        
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;1-runvasploop.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;2-extractData.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Completed KPOINT directory structure creation ......&quot;</span>
+            
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+        
+        </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Deep Choudhuri.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
