@@ -9,6 +9,9 @@ are extremely tedious, and expensive softwares can happily do them for you.
 As a practitioner of  DFT calculations, and a python-aficionado, I took it as an
 opportunity to solve this pertinent problem (atleast to me).  
 
+This is a priliminary attempt to create a robust opensource tool for DFT calculations that can be used by everybody. 
+If you would like to collaborate / contribute please email me at deep.choudhuri@gmail.com
+
 Limitations of the Code:
 ------------------------
 The code is written using python 2.7 with SPYDER IDE, and is tested on OSX (Yosemite) ONLY. Potential users are reccomended
