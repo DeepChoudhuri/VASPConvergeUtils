@@ -7,7 +7,7 @@ k-spacing (required for integration over the Brilloiun zone), smearing width, et
 are extremely tedious, and expensive softwares can happily do them for you.
 
 As a practitioner of  DFT calculations, and a python-aficionado, I took it as an
-opportunity to solve a pertinent problem (atleast to me).  
+opportunity to solve this pertinent problem (atleast to me).  
 
 Limitations of the Code:
 ------------------------
