@@ -51,35 +51,35 @@
   <div class="section" id="module-VASPConvergeUtils">
 <span id="auto-generated-documentation"></span><h1>Auto Generated Documentation<a class="headerlink" href="#module-VASPConvergeUtils" title="Permalink to this headline">¶</a></h1>
 <p>Module name : VASPConvergeUtils.py</p>
-<p>Motivation :
-Density functional theory (DFT) based calculations often requires one (e.g. a dilligent grad student / postdoc) to 
-perform convergence calculations on a supercell, prior to examining a research problem . Such calculations typically 
-involve identifying several parameters  like the cut-off energy (to incorporate all the necessary plane wave basis sets), 
-k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, 
-are extremely tedious, and expensive softwares can happily do them for you.</p>
-<p>As researcher who extensively uses DFT calculations, and a recent python-convert / aficionado / beginner, I took it as an
-opportunity to teach myself python while developing a code to solve a pertinent problem (atleast to me).</p>
-<p>Purpose:
-This python module attempts to automate the process by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. 
-The module provides the user with several tools (in form of classes and methods) to facilitate convergence calculations and analyzes the data.</p>
-<p>Code operation:
-1. Automatically creates a directory structure for convergence calculations, containing all the required files</p>
-<blockquote>
-<div>Basic files REQUIRED to create the strucutre : POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), 1-runvasploop.sh and 2-extractData.sh</div></blockquote>
-<ol class="arabic simple" start="2">
-<li>Use the seprately provided shell script,1-runvasploop.sh, to run the calculations by submitting jobs to your favourite cluster uisng VASP.qsub</li>
-<li>After the calculations are over,a second shell script, 2-extractData.sh (provided separately), will extract the calculated data, and</li>
-<li>The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. This plot can be further used to identify convergence parameters</li>
-</ol>
-<p>Limitations of the Code:
-The code is written using python 2.7, and has been tested on OSX (Yosemite) only.
-The current version only supports VASP (Vienna Ab Inito Simulation Package), however I have tried to keep the classes and methods 
-sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wiches to). Presently, the module will assist in the evaluation of  
-ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and 
-the user probably have to &#8220;tweak&#8221; it to suite their needs.</p>
-<p>IMPORTANT :  VASP is not included :)</p>
 <p>Author: Deep Choudhuri, PhD
-Date: 7th July 2015</p>
+Date: 18th July 2015</p>
+<p>The main idea behind posting this python module is for users to adapt/modify the content to meet their specific goals.</p>
+<div class="section" id="code-operation">
+<h2>Code operation:<a class="headerlink" href="#code-operation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Automatically creates a directory structure for convergence calculations, 
+containing all the required files.  Basic files REQUIRED to create the directory 
+structure are POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), 
+1-runvasploop.sh and 2-extractData.sh</li>
+<li>Use the seprately provided shell script,1-runvasploop.sh, to run the 
+calculations by submitting jobs to your favourite cluster using 
+VASP.qsub (this will require modification depending on the cluster
+and submission module being used)</li>
+<li>After the calculations are over,a second shell script, 2-extractData.sh (provided separately), 
+will extract the calculated data, and</li>
+<li>The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. 
+This plot can be further used for identifying the convergence parameters</li>
+</ol>
+<dl class="docutils">
+<dt>IMPORTANT <span class="classifier-delimiter">:</span> <span class="classifier">The current version DOES NOT connect with VASP (Vienna Ab Inito Simulation Package)</span></dt>
+<dd>on any cluster.</dd>
+</dl>
+</div>
+<div class="section" id="limitations-of-the-code">
+<h2>Limitations of the Code:<a class="headerlink" href="#limitations-of-the-code" title="Permalink to this headline">¶</a></h2>
+<p>The code is written using python 2.7 with SPYDER IDE, and is tested on OSX (Yosemite) ONLY. Potential users are reccomended
+to test this module on their respective platforms. The current version is specifically written for VASP. Furthermore, I 
+cannot guarantee that this code could be used &#8220;AS IS&#8221; and the user may be required &#8220;tweak&#8221; it to suite their needs.</p>
 <dl class="class">
 <dt id="VASPConvergeUtils.EcutConvSetup">
 <em class="property">class </em><code class="descclassname">VASPConvergeUtils.</code><code class="descname">EcutConvSetup</code><span class="sig-paren">(</span><em>ecutStart=0</em>, <em>ecutStop=10</em>, <em>estep=5</em>, <em>parentFolder='Ecut_Convergence'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/VASPConvergeUtils.html#EcutConvSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#VASPConvergeUtils.EcutConvSetup" title="Permalink to this definition">¶</a></dt>
@@ -204,6 +204,7 @@ OUTPUT : Dot or Cross products of the two vectors</p>
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -211,6 +212,15 @@ OUTPUT : Dot or Cross products of the two vectors</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Auto Generated Documentation</a><ul>
+<li><a class="reference internal" href="#code-operation">Code operation:</a></li>
+<li><a class="reference internal" href="#limitations-of-the-code">Limitations of the Code:</a></li>
+</ul>
+</li>
+</ul>
+
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">

@@ -55,41 +55,41 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Module name : VASPConvergeUtils.py</span>
 
-<span class="sd">Motivation :</span>
-<span class="sd">Density functional theory (DFT) based calculations often requires one (e.g. a dilligent grad student / postdoc) to </span>
-<span class="sd">perform convergence calculations on a supercell, prior to examining a research problem . Such calculations typically </span>
-<span class="sd">involve identifying several parameters  like the cut-off energy (to incorporate all the necessary plane wave basis sets), </span>
-<span class="sd">k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, </span>
-<span class="sd">are extremely tedious, and expensive softwares can happily do them for you.</span>
+<span class="sd">Author: Deep Choudhuri, PhD</span>
+<span class="sd">Date: 18th July 2015</span>
 
-<span class="sd">As researcher who extensively uses DFT calculations, and a recent python-convert / aficionado / beginner, I took it as an</span>
-<span class="sd">opportunity to teach myself python while developing a code to solve a pertinent problem (atleast to me).  </span>
+<span class="sd">The main idea behind posting this python module is for users to adapt/modify the content to meet their specific goals.</span>
 
-<span class="sd">Purpose:</span>
-<span class="sd">This python module attempts to automate the process by using already available robust and extensive, open-source python libraries e.g numpy, matplotlib etc. </span>
-<span class="sd">The module provides the user with several tools (in form of classes and methods) to facilitate convergence calculations and analyzes the data.</span>
 
 <span class="sd">Code operation:</span>
-<span class="sd">1. Automatically creates a directory structure for convergence calculations, containing all the required files</span>
-<span class="sd">   Basic files REQUIRED to create the strucutre : POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), 1-runvasploop.sh and 2-extractData.sh</span>
+<span class="sd">--------------</span>
+<span class="sd">1. Automatically creates a directory structure for convergence calculations, </span>
+<span class="sd">   containing all the required files.  Basic files REQUIRED to create the directory </span>
+<span class="sd">   structure are POSCAR, POTCAR, KPOINTS, INCAR, VASP.qsub (or any other job submission script), </span>
+<span class="sd">   1-runvasploop.sh and 2-extractData.sh</span>
 <span class="sd">    </span>
-<span class="sd">2. Use the seprately provided shell script,1-runvasploop.sh, to run the calculations by submitting jobs to your favourite cluster uisng VASP.qsub</span>
+<span class="sd">2. Use the seprately provided shell script,1-runvasploop.sh, to run the </span>
+<span class="sd">   calculations by submitting jobs to your favourite cluster using </span>
+<span class="sd">   VASP.qsub (this will require modification depending on the cluster</span>
+<span class="sd">   and submission module being used)</span>
 
-<span class="sd">3. After the calculations are over,a second shell script, 2-extractData.sh (provided separately), will extract the calculated data, and</span>
+<span class="sd">3. After the calculations are over,a second shell script, 2-extractData.sh (provided separately), </span>
+<span class="sd">   will extract the calculated data, and</span>
 
-<span class="sd">4. The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. This plot can be further used to identify convergence parameters</span>
+<span class="sd">4. The plotting utility , using Matplotlib,  will plot energies vs. the relavent parameter. </span>
+<span class="sd">   This plot can be further used for identifying the convergence parameters</span>
+
+<span class="sd">IMPORTANT :  The current version DOES NOT connect with VASP (Vienna Ab Inito Simulation Package)</span>
+<span class="sd">             on any cluster.</span>
+
 
 <span class="sd">Limitations of the Code:</span>
-<span class="sd">The code is written using python 2.7, and has been tested on OSX (Yosemite) only.</span>
-<span class="sd">The current version only supports VASP (Vienna Ab Inito Simulation Package), however I have tried to keep the classes and methods </span>
-<span class="sd">sufficiently general so that they can be extended to other types of packages (if a dilligent grad student / postdoc wiches to). Presently, the module will assist in the evaluation of  </span>
-<span class="sd">ONLY cut-off energy and k-spacing. Since this is a priliminary version, I cannot guarantee that this code could be used as a drop-in substitute and </span>
-<span class="sd">the user probably have to &quot;tweak&quot; it to suite their needs.</span>
+<span class="sd">------------------------</span>
+<span class="sd">The code is written using python 2.7 with SPYDER IDE, and is tested on OSX (Yosemite) ONLY. Potential users are reccomended</span>
+<span class="sd">to test this module on their respective platforms. The current version is specifically written for VASP. Furthermore, I </span>
+<span class="sd">cannot guarantee that this code could be used &quot;AS IS&quot; and the user may be required &quot;tweak&quot; it to suite their needs.  </span>
 
-<span class="sd">IMPORTANT :  VASP is not included :)</span>
 
-<span class="sd">Author: Deep Choudhuri, PhD</span>
-<span class="sd">Date: 7th July 2015</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
@@ -397,30 +397,7 @@
         
         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;1-runvasploop.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s">&#39;2-extractData.sh&#39;</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s">&quot;Completed KPOINT directory structure creation ......&quot;</span>
-            
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-        
-        </div></div>
+        <span class="k">print</span> <span class="s">&quot;Completed KPOINT directory structure creation ......&quot;</span></div></div>
 </pre></div>
 
           </div>
