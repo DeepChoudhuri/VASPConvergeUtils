@@ -6,7 +6,7 @@ involve identifying several parameters  like the cut-off energy (to incorporate 
 k-spacing (required for integration over the Brilloiun zone), smearing width, etc. These calculations, while important, 
 are extremely tedious, and expensive softwares can happily do them for you.
 
-As a practitioner of  DFT calculations, and a recent python-aficionado, I took it as an
+As a practitioner of  DFT calculations, and a python-aficionado, I took it as an
 opportunity to solve a pertinent problem (atleast to me).  
 
 Limitations of the Code:
