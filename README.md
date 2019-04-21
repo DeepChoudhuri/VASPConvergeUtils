@@ -16,4 +16,4 @@ Limitations of the Code:
 ------------------------
 The code is written using python 2.7 with SPYDER IDE, and is tested on OSX (Yosemite) ONLY. Potential users are reccomended
 to test this module on their respective platforms. The current version is specifically written for VASP. Furthermore, I 
-cannot guarantee that this code could be used "AS IS" and the user may be required "tweak" it to suite their needs.  
+cannot guarantee that this code could be used "AS IS" and the user may be required to "tweak" it to suite their needs.  
